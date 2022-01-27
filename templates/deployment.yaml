@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-deploy
+  labels:
+    {{- include "ordersvc.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "ordersvc.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        #TODO define proper labels here, so that pod template could be bounded with service template.
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ordersvc.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: ordersvcapp
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          # TODO use docker image repo and tag to concatenate correct image path here
+          image:
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          #expose order svc port here
+          ports:
+          #TODO please choose a proper endpoint as application readiness and liveness probes.
+          #TODO .e.g consider Spring Boot Actuator health endpoint
+          #TODO please provide a reasonable initialDelaySeconds here. You can try firstly remove it and see
+          #TODO what will happen per you app.
+          livenessProbe:
+            httpGet:
+              path:
+              port: http
+            initialDelaySeconds:
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path:
+              port: http
+            initialDelaySeconds:
+            periodSeconds: 10
+          resources:
+          #TODO complete content here. You should carry cpu and memory resource definition block in Values.yaml
+          # to this place. 'toYaml' is a handy template render function to render yaml block without content change.
+          {{- toYaml  | nindent 12 }}
+          env:
+            - name: RESTAURANT_SVC_HOST
+              # TODO complete content here, to make order svc getting correct restaurant svc host and kitchen svc host here.
+              # consider the configmap built in restaurant svc helm chart.
+              valueFrom:
+            - name: RESTAURANT_SVC_PORT
+              value: "8763"
+            - name: KITCHEN_SVC_HOST
+              valueFrom:
+            - name: KITCHEN_SVC_PORT
+              value: "8764"
