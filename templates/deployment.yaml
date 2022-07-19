@@ -10,7 +10,8 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      {{- include "ordersvc.selectorLabels" . | nindent 6 }}
+      app: ord
+#      {1{- include "ordersvc.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -18,6 +19,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
+        app: ord
         #TODO define proper labels here, so that pod template could be bounded with service template.
     spec:
       {{- with .Values.imagePullSecrets }}
@@ -32,38 +34,38 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           # TODO use docker image repo and tag to concatenate correct image path here
-          image:
+          image: nickta/micincu2:order-service.2022-07-01_15-15-31
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           #expose order svc port here
           ports:
+            - containerPort: 8762
           #TODO please choose a proper endpoint as application readiness and liveness probes.
           #TODO .e.g consider Spring Boot Actuator health endpoint
           #TODO please provide a reasonable initialDelaySeconds here. You can try firstly remove it and see
           #TODO what will happen per you app.
-          livenessProbe:
-            httpGet:
-              path:
-              port: http
-            initialDelaySeconds:
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path:
-              port: http
-            initialDelaySeconds:
-            periodSeconds: 10
-          resources:
+#          livenessProbe:
+#            httpGet:
+#              path:
+#              port: http
+#            initialDelaySeconds:
+#            periodSeconds: 10
+#          readinessProbe:
+#            httpGet:
+#              path:
+#              port: http
+#            initialDelaySeconds:
+#            periodSeconds: 10
+#          resources:
           #TODO complete content here. You should carry cpu and memory resource definition block in Values.yaml
           # to this place. 'toYaml' is a handy template render function to render yaml block without content change.
-          {{- toYaml  | nindent 12 }}
           env:
-            - name: RESTAURANT_SVC_HOST
+            - name: restaurantsvc.host
               # TODO complete content here, to make order svc getting correct restaurant svc host and kitchen svc host here.
               # consider the configmap built in restaurant svc helm chart.
-              valueFrom:
-            - name: RESTAURANT_SVC_PORT
+              value: restaurantsvctest-restaurant-svc.k8sns.svc.cluster.local
+            - name: restaurantsvc.port
               value: "8763"
-            - name: KITCHEN_SVC_HOST
-              valueFrom:
-            - name: KITCHEN_SVC_PORT
+            - name: kitchensvc.host
+              value: restaurantsvctest-kitchensvc.k8sns.svc.cluster.local
+            - name: kitchensvc.port
               value: "8764"

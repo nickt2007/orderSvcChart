@@ -6,4 +6,10 @@ metadata:
     {{- include "ordersvc.labels" . | nindent 4 }}
 spec:
   #TODO define proper 'ports', 'type' and 'selector' below, to make service working properly.
-
+  type: LoadBalancer
+  selector:
+    app: ord
+  ports:
+    - protocol: TCP
+      port: 8762
+      targetPort: 8762
